@@ -1,15 +1,17 @@
-function add(n1: number, n2: number, showResult: boolean, phrase: string) {
-  const result = n1 + n2;
-  if (showResult) {
-    console.log(phrase + result);
-  } else {
-    return;
-  }
+const person: {
+  // typescript object type
+  name: string;
+  age: number;
+  hobbies: string[];
+} = {
+  // javascript object
+  name: 'andhika',
+  age: 23,
+  hobbies: ['Sports', 'Cooking'],
+};
+
+let favoriteActivities: string[];
+
+for (const hobby of person.hobbies) {
+  console.log(hobby.toUpperCase());
 }
-
-const number1 = 5;
-const number2 = 2.8;
-const printResult = true;
-const resultPhrase = 'result is : ';
-
-add(number1, number2, printResult, resultPhrase);

@@ -1,0 +1,17 @@
+{
+  "name": "understanding-ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "lite-server"
+  },
+  "author": "Maximilian Schwarzmüller",
+  "license": "ISC",
+  "devDependencies": {
+    "install": "^0.13.0",
+    "lite-server": "^2.5.4",
+    "typescript": "^4.9.5"
+  }
+}

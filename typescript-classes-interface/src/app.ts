@@ -41,7 +41,9 @@ class ITDepartment extends Department {
 }
 
 class AccountingDepartment extends Department {
-  constructor(id: string, name: string, public admins: string[], private reports: string[]) {
+  private static instance: AccountingDepartment;
+
+  private constructor(id: string, name: string, public admins: string[], private reports: string[]) {
     super(id, name); // pass the id to the Department class
   }
 
@@ -57,6 +59,15 @@ class AccountingDepartment extends Department {
     if (!value) return;
 
     this.reports.push(value);
+  }
+
+  // static method to get the private constructor or the object instance of private constructor class
+  static getInstance() {
+    if (this.instance) {
+      return this.instance;
+    }
+
+    return (this.instance = new AccountingDepartment('Accounting', 'Julia', ['herman', 'joko'], []));
   }
 
   printAdmin(this: ITDepartment) {
@@ -85,13 +96,16 @@ it.printAdmin();
 
 ///-----////
 
-const accounting = new AccountingDepartment('Accounting', 'Julia', ['Rio'], []);
+// const accounting = new AccountingDepartment('Accounting', 'Julia', ['Rio'], []);
 
-accounting.printAdmin();
+// accounting.printAdmin();
 
-accounting.addEmployee('julio');
-accounting.printEmployeeInformation();
-accounting.addReports = 'report sunday';
+// accounting.addEmployee('julio');
+// accounting.printEmployeeInformation();
+// accounting.addReports = 'report sunday';
 
-const reportsData = accounting.getReports;
-console.log(reportsData);
+// const reportsData = accounting.getReports;
+// console.log(reportsData);
+
+// access the private constructor class instance
+const accounting = AccountingDepartment.getInstance();

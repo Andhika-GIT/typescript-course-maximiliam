@@ -1,12 +1,14 @@
-class Department {
+abstract class Department {
   protected employees: string[] = [];
 
-  constructor(private readonly id: string, public name: string) {}
+  constructor(protected readonly id: string, public name: string) {}
+
+  static createEmployee(name: string) {
+    return { name: name };
+  }
 
   // this: Deparment -> to make sure this keyword always refer to instance inside the Department class
-  describe(this: Department) {
-    console.log(`Deparment Name : ${this.name}, id: ${this.id}`);
-  }
+  abstract describe(this: Department): void;
 
   addEmployee(this: Department, employee: string) {
     this.employees.push(employee);
@@ -30,6 +32,11 @@ class ITDepartment extends Department {
 
   addEmployee(name: string): void {
     this.employees.push(name);
+  }
+
+  // ABSTRACT METHOD FROM PARENT CLASS
+  describe(): void {
+    console.log('IT DEPARMENT - ID: ' + this.id);
   }
 }
 
@@ -59,13 +66,18 @@ class AccountingDepartment extends Department {
   addEmployee(name: string): void {
     this.employees.push(name);
   }
+
+  // ABSTRACT METHOD FROM PARENT CLASS
+  describe(): void {
+    console.log('ACCOUNTING DEPARTMENT - ID: ' + this.id);
+  }
 }
 
 // testing //
 
-const deparment = new Department('123123123', 'andhika'); // initiate class
+// const deparment = new Department('123123123', 'andhika'); // initiate class
 
-deparment.describe(); // call the describe() method property
+const employee1 = Department.createEmployee('andhika');
 
 const it = new ITDepartment('IT', 'Furfio', ['herman', 'joko']);
 

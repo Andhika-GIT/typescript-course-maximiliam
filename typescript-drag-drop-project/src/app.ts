@@ -1,3 +1,44 @@
+// validation type
+interface Validatable {
+  value: string | number;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+}
+
+const validate = (input: Validatable) => {
+  let isValid = true;
+
+  // if we insert required into the argument
+  if (input.required) {
+    isValid = isValid && input.value.toString().trim().length > 0;
+  }
+
+  // if we insert minLength into the argument and if the value is string
+  if (input.minLength !== undefined && typeof input.value === 'string') {
+    isValid = isValid && input.value.length >= input.minLength;
+  }
+
+  // if we insert minLength into the argument and if the value is string
+  if (input.maxLength !== undefined && typeof input.value === 'string') {
+    isValid = isValid && input.value.length >= input.maxLength;
+  }
+
+  // if we insert min into the argument and if the value is number
+  if (input.min != null && typeof input.value === 'number') {
+    isValid = isValid && input.value >= input.min;
+  }
+
+  // if we insert max into the argument and if the value is number
+  if (input.max != null && typeof input.value === 'number') {
+    isValid = isValid && input.value <= input.max;
+  }
+
+  return isValid;
+};
+
 class ProjectInput {
   templateElement;
   hostElement;
@@ -33,7 +74,7 @@ class ProjectInput {
     const enteredDescription = this.descriptionInputElement.value;
     const enteredPeople = this.peopleInputElement.value;
 
-    if (enteredTitle.trim().length === 0 || enteredPeople.trim().length === 0 || enteredDescription.trim().length === 0) {
+    if (!validate({ value: enteredTitle, required: true, minLength: 5 }) || !validate({ value: enteredDescription, required: true, minLength: 5 }) || !validate({ value: +enteredPeople, required: true, min: 1 })) {
       alert('Invalid input, please try again');
       return;
     } else {

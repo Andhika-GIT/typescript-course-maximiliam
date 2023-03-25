@@ -39,10 +39,22 @@ const validate = (input: Validatable) => {
   return isValid;
 };
 
-// project state Management (singleton) class
+// project type class
+enum ProjectStatus {
+  Active,
+  finished,
+}
+
+class Project {
+  constructor(public id: string, public title: string, public description: string, public people: number, public status: ProjectStatus) {}
+}
+
+// project state Management (singleton) class'
+type Listener = (items: Array<Project>) => void;
+
 class ProjectState {
-  private listeners: Array<any> = [];
-  private projects: Array<any> = [];
+  private listeners: Array<Listener> = [];
+  private projects: Array<Project> = [];
   private static instance: ProjectState; // to access the class instance
 
   // private constructor -> singletons class
@@ -57,17 +69,12 @@ class ProjectState {
     return this.instance;
   }
 
-  addListener(listenerFn: Function) {
+  addListener(listenerFn: Listener) {
     this.listeners.push(listenerFn);
   }
 
   addProject(title: string, description: string, people: number) {
-    const newProject = {
-      id: Math.random().toString(),
-      title,
-      description,
-      people,
-    };
+    const newProject = new Project(Math.random().toString(), title, description, people, ProjectStatus.Active);
 
     this.projects.push(newProject);
 
@@ -81,6 +88,7 @@ class ProjectState {
 const projectState = ProjectState.getInstance();
 
 // render project list class
+
 class projectList {
   templateElement;
   hostElement;
@@ -99,7 +107,8 @@ class projectList {
     this.element.setAttribute('id', `${this.type}-projects`);
 
     // call the addListeners to store the listeners functions
-    projectState.addListener((projects: Array<any>) => {
+    projectState.addListener((projects: Array<Project>) => {
+      // run renderProjects and pass the projects to render new list of project
       this.renderProjects(projects);
     });
 
@@ -108,7 +117,7 @@ class projectList {
   }
 
   // render the projects after listeners
-  private renderProjects(projects: Array<any>) {
+  private renderProjects(projects: Array<Project>) {
     const listEl = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
     for (const projectItem of projects) {
       const listItem = document.createElement('li');
@@ -120,7 +129,7 @@ class projectList {
   private renderContent() {
     const listId = `${this.type}-projects-list`;
     this.element.querySelector('ul')!.id = listId;
-    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + 'PROJECTS';
+    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
   }
 
   private attach() {

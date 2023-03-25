@@ -42,23 +42,69 @@ const validate = (input: Validatable) => {
 // project type class
 enum ProjectStatus {
   Active,
-  finished,
+  Finished,
 }
 
 class Project {
   constructor(public id: string, public title: string, public description: string, public people: number, public status: ProjectStatus) {}
 }
 
-// project state Management (singleton) class'
-type Listener = (items: Array<Project>) => void;
+// Component base class
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
+  templateElement: HTMLTemplateElement;
+  hostElement: T;
+  element: U;
 
-class ProjectState {
-  private listeners: Array<Listener> = [];
+  constructor(templateId: string, hostElementId: string, insertAtStart: boolean, newElementId?: string) {
+    // TEMPLATE HTML ELEMENT
+    this.templateElement = <HTMLTemplateElement>document.getElementById(templateId);
+
+    // HOST ELEMENT (element with id of "app")
+    this.hostElement = <T>document.getElementById(hostElementId);
+
+    // make the copy of the template content
+    const importedNode = document.importNode(this.templateElement.content, true);
+
+    // take the first element from the copy template content which is the <form> element
+    this.element = <U>importedNode.firstElementChild;
+
+    if (newElementId) {
+      // dynamic id
+      this.element.setAttribute('id', newElementId);
+    }
+
+    this.attach(insertAtStart);
+  }
+
+  private attach(insertAtBeginning: boolean) {
+    // insert the <form> element into hostElement (id="app")
+    this.hostElement.insertAdjacentElement(insertAtBeginning ? 'afterbegin' : 'beforeend', this.element);
+  }
+
+  // all child class must inherit this method
+  protected abstract configure(): void;
+  protected abstract renderContent(): void;
+}
+
+// project state Management (singleton) class'
+type Listener<T> = (items: Array<T>) => void;
+
+class State<T> {
+  protected listeners: Listener<T>[] = [];
+
+  addListener(listenerFn: Listener<T>) {
+    this.listeners.push(listenerFn);
+  }
+}
+
+class ProjectState extends State<Project> {
   private projects: Array<Project> = [];
   private static instance: ProjectState; // to access the class instance
 
   // private constructor -> singletons class
-  private constructor() {}
+  private constructor() {
+    super();
+  }
 
   static getInstance() {
     if (this.instance) {
@@ -67,10 +113,6 @@ class ProjectState {
 
     this.instance = new ProjectState();
     return this.instance;
-  }
-
-  addListener(listenerFn: Listener) {
-    this.listeners.push(listenerFn);
   }
 
   addProject(title: string, description: string, people: number) {
@@ -89,74 +131,59 @@ const projectState = ProjectState.getInstance();
 
 // render project list class
 
-class projectList {
-  templateElement;
-  hostElement;
-  element;
+class projectList extends Component<HTMLDivElement, HTMLElement> {
   constructor(private type: 'active' | 'finished') {
-    this.templateElement = <HTMLTemplateElement>document.getElementById('project-list');
-    this.hostElement = <HTMLDivElement>document.getElementById('app');
+    super('project-list', 'app', false, `${type}-projects`);
 
-    // make the copy of the template content
-    const importedNode = document.importNode(this.templateElement.content, true);
+    this.configure();
+    this.renderContent();
+  }
 
-    // take the first element from the copy template content which is the <form> element
-    this.element = <HTMLElement>importedNode.firstElementChild;
-
-    // dynamic id
-    this.element.setAttribute('id', `${this.type}-projects`);
-
+  // INHERITANCE METHOD FROM COMPONENT CLASS ( MUST ADD TO AVOID ERROR )
+  protected configure(): void {
     // call the addListeners to store the listeners functions
     projectState.addListener((projects: Array<Project>) => {
-      // run renderProjects and pass the projects to render new list of project
-      this.renderProjects(projects);
-    });
+      // filter project based on active or finished
+      const relevantProjects = projects.filter((project) => {
+        if (this.type === 'active') {
+          return project.status === ProjectStatus.Active;
+        }
 
-    this.attach();
-    this.renderContent();
+        return project.status === ProjectStatus.Finished;
+      });
+
+      // run renderProjects and pass the projects to render new list of project
+      this.renderProjects(relevantProjects);
+    });
+  }
+
+  protected renderContent() {
+    const listId = `${this.type}-projects-list`;
+    this.element.querySelector('ul')!.id = listId;
+    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
   }
 
   // render the projects after listeners
   private renderProjects(projects: Array<Project>) {
     const listEl = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
+    // clear elements to avoid duplication
+    listEl.innerHTML = '';
     for (const projectItem of projects) {
       const listItem = document.createElement('li');
       listItem.textContent = projectItem.title;
       listEl?.appendChild(listItem);
     }
   }
-
-  private renderContent() {
-    const listId = `${this.type}-projects-list`;
-    this.element.querySelector('ul')!.id = listId;
-    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
-  }
-
-  private attach() {
-    // insert the <form> element into hostElement (id="app")
-    this.hostElement.insertAdjacentElement('beforeend', this.element);
-  }
 }
 
 // project input class
-class ProjectInput {
-  templateElement;
-  hostElement;
-  element;
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   titleInputElement: HTMLInputElement;
   descriptionInputElement: HTMLInputElement;
   peopleInputElement: HTMLInputElement;
 
   constructor() {
-    this.templateElement = <HTMLTemplateElement>document.getElementById('project-input');
-    this.hostElement = <HTMLDivElement>document.getElementById('app');
-
-    // make the copy of the template content
-    const importedNode = document.importNode(this.templateElement.content, true);
-
-    // take the first element from the copy template content which is the <form> element
-    this.element = <HTMLFormElement>importedNode.firstElementChild;
-    this.element.setAttribute('id', 'user-input');
+    super('project-input', 'app', true, 'user-input');
 
     // select all the input field in the form based on the id
     this.titleInputElement = <HTMLInputElement>this.element.querySelector('#title');
@@ -164,10 +191,11 @@ class ProjectInput {
     this.peopleInputElement = <HTMLInputElement>this.element.querySelector('#people');
 
     this.submitHandler();
-
-    // run the attach function
-    this.attach();
   }
+
+  // INHERITANCE METHOD FROM COMPONENT CLASS ( MUST ADD TO AVOID ERROR )
+  protected configure(): void {}
+  protected renderContent(): void {}
 
   private gatherUserInput(): [string, string, number] | void {
     const enteredTitle = this.titleInputElement.value;
@@ -199,11 +227,6 @@ class ProjectInput {
         this.clearInputs();
       }
     });
-  }
-
-  private attach() {
-    // insert the <form> element into hostElement (id="app")
-    this.hostElement.insertAdjacentElement('afterbegin', this.element);
   }
 }
 

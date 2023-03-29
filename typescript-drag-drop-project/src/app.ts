@@ -129,8 +129,25 @@ class ProjectState extends State<Project> {
 // create global constant to initialize the project state class
 const projectState = ProjectState.getInstance();
 
-// render project list class
+// render project item class
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+  constructor(hostId: string, private project: Project) {
+    super('single-project', hostId, false, project.id);
 
+    this.renderContent();
+  }
+
+  // INHERITANCE METHOD FROM COMPONENT CLASS ( MUST ADD TO AVOID ERROR )
+  protected configure() {}
+
+  protected renderContent() {
+    this.element.querySelector('h2')!.textContent = this.project.title;
+    this.element.querySelector('h3')!.textContent = this.project.people.toString();
+    this.element.querySelector('p')!.textContent = this.project.description;
+  }
+}
+
+// render project list class
 class projectList extends Component<HTMLDivElement, HTMLElement> {
   constructor(private type: 'active' | 'finished') {
     super('project-list', 'app', false, `${type}-projects`);
@@ -159,8 +176,8 @@ class projectList extends Component<HTMLDivElement, HTMLElement> {
 
   protected renderContent() {
     const listId = `${this.type}-projects-list`;
-    this.element.querySelector('ul')!.id = listId;
     this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
+    this.element.querySelector('ul')!.id = listId;
   }
 
   // render the projects after listeners
@@ -168,10 +185,9 @@ class projectList extends Component<HTMLDivElement, HTMLElement> {
     const listEl = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
     // clear elements to avoid duplication
     listEl.innerHTML = '';
-    for (const projectItem of projects) {
-      const listItem = document.createElement('li');
-      listItem.textContent = projectItem.title;
-      listEl?.appendChild(listItem);
+    for (const item of projects) {
+      // instanstiate the project item class to render single list item
+      new ProjectItem(this.element.querySelector('ul')!.id, item);
     }
   }
 }
@@ -220,7 +236,7 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
       const userInput = this.gatherUserInput();
       if (Array.isArray(userInput)) {
         const [title, desc, people] = userInput;
-        console.log(title, desc, people);
+        // console.log(title, desc, people);
 
         // call the global constant to store the project
         projectState.addProject(title, desc, people);

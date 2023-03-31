@@ -8,6 +8,18 @@ interface Validatable {
   max?: number;
 }
 
+// Drag & drop type
+interface Draggable {
+  dragStartHandler(event: DragEvent): void;
+  dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+  dragOverHandler(event: DragEvent): void;
+  dropHandler(event: DragEvent): void;
+  dragLeaveHandler(event: DragEvent): void;
+}
+
 const validate = (input: Validatable) => {
   let isValid = true;
 
@@ -130,25 +142,41 @@ class ProjectState extends State<Project> {
 const projectState = ProjectState.getInstance();
 
 // render project item class
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements Draggable {
   constructor(hostId: string, private project: Project) {
     super('single-project', hostId, false, project.id);
 
     this.renderContent();
   }
 
+  get persons() {
+    if (this.project.people === 1) {
+      return '1 person';
+    } else {
+      return `${this.project.people} persons`;
+    }
+  }
+
   // INHERITANCE METHOD FROM COMPONENT CLASS ( MUST ADD TO AVOID ERROR )
-  protected configure() {}
+  protected configure() {
+    this.element.addEventListener('dragstart', this.dragStartHandler);
+    this.element.addEventListener('dragend', this.dragStartHandler);
+  }
 
   protected renderContent() {
     this.element.querySelector('h2')!.textContent = this.project.title;
-    this.element.querySelector('h3')!.textContent = this.project.people.toString();
+    this.element.querySelector('h3')!.textContent = this.persons;
     this.element.querySelector('p')!.textContent = this.project.description;
   }
+
+  // Draggable interface methods
+  dragStartHandler(_: DragEvent): void {}
+
+  dragEndHandler(_: DragEvent): void {}
 }
 
 // render project list class
-class projectList extends Component<HTMLDivElement, HTMLElement> {
+class projectList extends Component<HTMLDivElement, HTMLElement> implements DragTarget {
   constructor(private type: 'active' | 'finished') {
     super('project-list', 'app', false, `${type}-projects`);
 
@@ -158,6 +186,11 @@ class projectList extends Component<HTMLDivElement, HTMLElement> {
 
   // INHERITANCE METHOD FROM COMPONENT CLASS ( MUST ADD TO AVOID ERROR )
   protected configure(): void {
+    // drag event listeners
+    this.element.addEventListener('dragover', this.dragOverHandler.bind(this));
+    this.element.addEventListener('dragleave', this.dragLeaveHandler.bind(this));
+    this.element.addEventListener('drop', this.dropHandler.bind(this));
+
     // call the addListeners to store the listeners functions
     projectState.addListener((projects: Array<Project>) => {
       // filter project based on active or finished
@@ -190,6 +223,19 @@ class projectList extends Component<HTMLDivElement, HTMLElement> {
       new ProjectItem(this.element.querySelector('ul')!.id, item);
     }
   }
+
+  // drag target interface methods
+  dragOverHandler(this: projectList, _: DragEvent): void {
+    const listEl = this.element.querySelector('ul')!;
+    listEl?.classList.add('droppable');
+  }
+
+  dragLeaveHandler(this: projectList, _: DragEvent): void {
+    const listEl = this.element.querySelector('ul')!;
+    listEl?.classList.remove('droppable');
+  }
+
+  dropHandler(this: projectList, _: DragEvent): void {}
 }
 
 // project input class
